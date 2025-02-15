@@ -44,3 +44,20 @@ const initializeCamberFunction = () => {
     };
   }
 };
+
+const plotCamberLine = (xStart:number, yStart: number, pointCount: number,  scaleFactor: number, lwidth: number, colour:string) => {
+    const dx = span/(pointCount-1);
+    ctx.beginPath()
+    ctx.lineWidth = lwidth
+    ctx.strokeStyle = colour
+    ctx.moveTo(xStart, yStart)
+
+    for(let i = 0; i<pointCount; i++){
+        const x = i*dx
+        const y = camberFunction(x)
+        ctx.lineTo(xStart+x*scaleFactor, yStart+y*scaleFactor)
+    }
+    ctx.stroke()
+}
+
+
