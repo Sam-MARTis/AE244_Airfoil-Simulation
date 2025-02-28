@@ -51,6 +51,23 @@ const camberSlope = (xVal) => {
     const dh = 0.0001;
     return (camberFunction(xVal + dh) - camberFunction(xVal - dh)) / (2 * dh);
 };
+// Math stuff here
+const mapThetaToX = (theta) => {
+    return (chordLength / 2) * (1 - Math.cos(theta));
+};
+const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = 0.001) => {
+    let x = lowerLimit;
+    let result = 0;
+    if (upperLimit < lowerLimit) {
+        throw Error("Upper limit cannot be lower than the lower limit for integration");
+    }
+    while (x < upperLimit) {
+        result += dh * functionToIntegrate(x);
+        x += dh;
+    }
+    return result;
+};
+//Plotting stuff here
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const dx = chordLength / (pointCount - 1);
@@ -98,10 +115,6 @@ const DEFAULT_LINE_THICKNESS = 1;
 const CAMBER_COLOUR = "red";
 const DRAW_SCALE_FACTOR = 100;
 let thingToPlot = "camberLine";
-plotOptionMenu.addEventListener("change", () => {
-    // Update the PlotOption variable to the selected value
-    thingToPlot = plotOptionMenu.value;
-});
 const performPlotOperation = (pointCount) => {
     getUserMenuInput();
     xOffset = canvas.width / 2 - chordLength * DRAW_SCALE_FACTOR / 2;
@@ -122,5 +135,10 @@ performPlotOperation(200);
 submitBut.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Submitted");
+    performPlotOperation(200);
+});
+plotOptionMenu.addEventListener("change", () => {
+    // Update the PlotOption variable to the selected value
+    thingToPlot = plotOptionMenu.value;
     performPlotOperation(200);
 });

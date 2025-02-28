@@ -64,6 +64,60 @@ const camberSlope = (xVal:number):number => {
 }
 
 
+// Math stuff here
+
+const mapThetaToX = (theta: number): number =>  {
+  return (chordLength/2)*(1-Math.cos(theta))
+}
+const integrate = (functionToIntegrate: (xIn: number) => number, lowerLimit: number, upperLimit: number, dh: number = 0.001):number => {
+  let x = lowerLimit;
+  let result = 0;
+  if(upperLimit<lowerLimit){
+    throw Error("Upper limit cannot be lower than the lower limit for integration")
+  }
+  while(x<upperLimit){
+    result += dh*functionToIntegrate(x)
+    x+= dh
+  }
+  return result
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Plotting stuff here
+
 const plotAirfoilFunction = (functionIn:(xNum:number) => number, xStart:number, yStart: number, pointCount: number,  scaleFactor: number, lwidth: number, colour:string) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     const dx = chordLength/(pointCount-1);
@@ -119,40 +173,42 @@ const DRAW_SCALE_FACTOR = 100
 
 let thingToPlot = "camberLine"
 
-plotOptionMenu.addEventListener("change", () => {
-  // Update the PlotOption variable to the selected value
-  thingToPlot = plotOptionMenu.value;
-});
 
 const performPlotOperation = (pointCount: number) => {
-    getUserMenuInput()
-    xOffset = canvas.width/2 - chordLength*DRAW_SCALE_FACTOR/2
-    yOffset = canvas.height/2 + M*chordLength*DRAW_SCALE_FACTOR/2
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    console.log("Performing plot operation")
-
-    switch(thingToPlot){
-      case "camberLine":
-        initializeCamberFunction()
-        plotAirfoilFunction(camberFunction, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
-        break;
+  getUserMenuInput()
+  xOffset = canvas.width/2 - chordLength*DRAW_SCALE_FACTOR/2
+  yOffset = canvas.height/2 + M*chordLength*DRAW_SCALE_FACTOR/2
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  console.log("Performing plot operation")
+  
+  switch(thingToPlot){
+    case "camberLine":
+      initializeCamberFunction()
+      plotAirfoilFunction(camberFunction, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+      break;
       case "camberSlope":
         plotAirfoilFunction(camberSlope, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
         
         break;
+        
+        
+      }
       
-
+      
+      
     }
-
-
-   
-}
-
-performPlotOperation(200)
-
-submitBut.addEventListener("click", (e: Event) => {
-    e.preventDefault();
-    console.log("Submitted");
-    performPlotOperation(200);
-  });
-
+    
+    performPlotOperation(200)
+    
+    submitBut.addEventListener("click", (e: Event) => {
+      e.preventDefault();
+      console.log("Submitted");
+      performPlotOperation(200);
+    });
+    
+    
+    plotOptionMenu.addEventListener("change", () => {
+      // Update the PlotOption variable to the selected value
+      thingToPlot = plotOptionMenu.value;
+      performPlotOperation(200)
+    });
