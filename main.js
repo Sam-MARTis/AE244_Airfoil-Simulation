@@ -11,7 +11,9 @@ let M = 0.04;
 let P = 0.3;
 let chordLength = 4;
 let T = 0.12;
-const AOA = 1 * Math.PI / 180;
+const Uinfty = 1;
+const AOA = 10 * Math.PI / 180;
+const AnCache = [];
 const MMenu = document.getElementById('M');
 const PMenu = document.getElementById('P');
 const ChordLengthMenu = document.getElementById('ChordLength');
@@ -79,6 +81,26 @@ const getAn = (n) => {
         return AOA - ((1 / Math.PI) * integrate(integrand, 0, Math.PI));
     }
     return (2 / Math.PI) * integrate(integrand, 0, Math.PI);
+};
+const cacheAn = (count) => {
+    for (let i = AnCache.length; i < count; i++) {
+        AnCache.push(getAn(i));
+    }
+};
+let circFunc = (theta) => { return 0; };
+const initializeCirculationFunction = () => {
+    circFunc = (theta) => {
+        let circulation = 0;
+        if (AnCache.length == 0) {
+            throw Error("Unable to initialize circulation function due to 'An' cache being empty");
+        }
+        circulation += (AnCache[0] * (1 + Math.cos(theta)) / Math.sin(theta));
+        for (let i = 1; i < AnCache.length; i++) {
+            circulation += AnCache[i] * Math.sin(theta);
+        }
+        circulation = circulation * 2 * Uinfty;
+        return circulation;
+    };
 };
 //Plotting stuff here
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
@@ -149,6 +171,7 @@ submitBut.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Submitted");
     performPlotOperation(200);
+    console.log(getAn(0));
 });
 plotOptionMenu.addEventListener("change", () => {
     // Update the PlotOption variable to the selected value
