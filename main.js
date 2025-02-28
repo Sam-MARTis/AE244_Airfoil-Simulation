@@ -15,6 +15,7 @@ const MMenu = document.getElementById('M');
 const PMenu = document.getElementById('P');
 const ChordLengthMenu = document.getElementById('ChordLength');
 const submitBut = document.getElementById("Submit");
+const plotOptionMenu = document.getElementById("plotOptions");
 let camberFunction = (x) => {
     return 0;
 };
@@ -50,7 +51,24 @@ const camberSlope = (xVal) => {
     const dh = 0.0001;
     return (camberFunction(xVal + dh) - camberFunction(xVal - dh)) / (2 * dh);
 };
-const plotCamberLine = (xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
+const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const dx = chordLength / (pointCount - 1);
+    ctx.beginPath();
+    ctx.lineWidth = lwidth;
+    ctx.strokeStyle = colour;
+    ctx.moveTo(xStart, yStart - functionIn(0) * scaleFactor);
+    for (let i = 0; i < pointCount; i++) {
+        // ctx.beginPath()
+        const x = i * dx;
+        const y = functionIn(x);
+        ctx.lineTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
+        ctx.moveTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
+        ctx.stroke();
+    }
+    ctx.stroke();
+};
+const plotCamberSlope = (xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const dx = chordLength / (pointCount - 1);
     ctx.beginPath();
@@ -60,7 +78,7 @@ const plotCamberLine = (xStart, yStart, pointCount, scaleFactor, lwidth, colour)
     for (let i = 0; i < pointCount; i++) {
         // ctx.beginPath()
         const x = i * dx;
-        const y = camberFunction(x);
+        const y = camberSlope(x);
         ctx.lineTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
         ctx.moveTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
         ctx.stroke();
@@ -79,13 +97,26 @@ let yOffset = height / 2;
 const DEFAULT_LINE_THICKNESS = 1;
 const CAMBER_COLOUR = "red";
 const DRAW_SCALE_FACTOR = 100;
+let thingToPlot = "camberLine";
+plotOptionMenu.addEventListener("change", () => {
+    // Update the PlotOption variable to the selected value
+    thingToPlot = plotOptionMenu.value;
+});
 const performPlotOperation = (pointCount) => {
     getUserMenuInput();
     xOffset = canvas.width / 2 - chordLength * DRAW_SCALE_FACTOR / 2;
     yOffset = canvas.height / 2 + M * chordLength * DRAW_SCALE_FACTOR / 2;
-    initializeCamberFunction();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    plotCamberLine(xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+    console.log("Performing plot operation");
+    switch (thingToPlot) {
+        case "camberLine":
+            initializeCamberFunction();
+            plotAirfoilFunction(camberFunction, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+            break;
+        case "camberSlope":
+            plotAirfoilFunction(camberSlope, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+            break;
+    }
 };
 performPlotOperation(200);
 submitBut.addEventListener("click", (e) => {
