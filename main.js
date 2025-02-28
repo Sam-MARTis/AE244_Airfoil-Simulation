@@ -11,6 +11,7 @@ let M = 0.04;
 let P = 0.3;
 let chordLength = 4;
 let T = 0.12;
+const AOA = 1 * Math.PI / 180;
 const MMenu = document.getElementById('M');
 const PMenu = document.getElementById('P');
 const ChordLengthMenu = document.getElementById('ChordLength');
@@ -66,6 +67,18 @@ const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = 0.001) => {
         x += dh;
     }
     return result;
+};
+const getAn = (n) => {
+    if (n < 0) {
+        throw Error("Cannot find An for negative n");
+    }
+    const integrand = (theta) => {
+        return camberSlope(mapThetaToX(theta)) * Math.cos(n * theta);
+    };
+    if (n == 0) {
+        return AOA - ((1 / Math.PI) * integrate(integrand, 0, Math.PI));
+    }
+    return (2 / Math.PI) * integrate(integrand, 0, Math.PI);
 };
 //Plotting stuff here
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {

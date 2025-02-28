@@ -12,6 +12,7 @@ let P = 0.3;
 let chordLength = 4;
 
 let T = 0.12;
+const AOA = 1*Math.PI/180
 
 
 
@@ -80,6 +81,19 @@ const integrate = (functionToIntegrate: (xIn: number) => number, lowerLimit: num
     x+= dh
   }
   return result
+}
+
+const getAn = (n:number) => {
+  if(n<0){
+    throw Error("Cannot find An for negative n")
+  }
+  const integrand = (theta: number) => {
+    return camberSlope(mapThetaToX(theta))*Math.cos(n*theta)
+  }
+  if(n==0){
+    return AOA  - ((1/Math.PI)*integrate(integrand, 0, Math.PI))
+  }
+  return (2/Math.PI)*integrate(integrand, 0, Math.PI)
 }
 
 
