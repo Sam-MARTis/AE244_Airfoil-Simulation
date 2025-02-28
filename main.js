@@ -46,7 +46,12 @@ const initializeCamberFunction = () => {
         };
     }
 };
+const camberSlope = (xVal) => {
+    const dh = 0.0001;
+    return (camberFunction(xVal + dh) - camberFunction(xVal - dh)) / (2 * dh);
+};
 const plotCamberLine = (xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const dx = chordLength / (pointCount - 1);
     ctx.beginPath();
     ctx.lineWidth = lwidth;

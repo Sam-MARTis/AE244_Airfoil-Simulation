@@ -58,7 +58,14 @@ const initializeCamberFunction = () => {
   }
 };
 
+const camberSlope = (xVal:number):number => {
+  const dh = 0.0001
+  return (camberFunction(xVal+dh) - camberFunction(xVal-dh))/(2*dh)
+}
+
+
 const plotCamberLine = (xStart:number, yStart: number, pointCount: number,  scaleFactor: number, lwidth: number, colour:string) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     const dx = chordLength/(pointCount-1);
     ctx.beginPath()
     ctx.lineWidth = lwidth
@@ -75,7 +82,6 @@ const plotCamberLine = (xStart:number, yStart: number, pointCount: number,  scal
     }
     ctx.stroke()
 }
-
 
 const getUserMenuInput = () => {
     M = parseFloat(MMenu.value)/100;
