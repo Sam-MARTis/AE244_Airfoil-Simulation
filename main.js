@@ -7,13 +7,16 @@ const width = canvas.width;
 const height = canvas.height;
 // First better take input of airofil parameters
 let airfoilType = 1; // 0 if custom, 1 if NACA 4 digit, 2 if NACA 5 digit
-let M = 0.04;
-let P = 0.3;
-let chordLength = 4;
+let M = 0.02;
+let P = 0.4;
+let chordLength = 1;
+const pointCount = 500;
+const defaultIntegrationAccuracy = 0.0001;
 let T = 0.12;
 const Uinfty = 1;
-const AOA = 10 * Math.PI / 180;
-const AnCache = [];
+const AOA = 0 * Math.PI / 180;
+let AnCache = [];
+let airfoilCirculationCache = [];
 const MMenu = document.getElementById('M');
 const PMenu = document.getElementById('P');
 const ChordLengthMenu = document.getElementById('ChordLength');
@@ -58,7 +61,12 @@ const camberSlope = (xVal) => {
 const mapThetaToX = (theta) => {
     return (chordLength / 2) * (1 - Math.cos(theta));
 };
-const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = 0.001) => {
+const mapPointNumberToTheta = (i) => {
+    const eta = i / (pointCount - 1);
+    const theta = Math.acos(1 - (2 * eta));
+    return theta;
+};
+const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = defaultIntegrationAccuracy) => {
     let x = lowerLimit;
     let result = 0;
     if (upperLimit < lowerLimit) {
@@ -83,7 +91,8 @@ const getAn = (n) => {
     return (2 / Math.PI) * integrate(integrand, 0, Math.PI);
 };
 const cacheAn = (count) => {
-    for (let i = AnCache.length; i < count; i++) {
+    AnCache = [];
+    for (let i = 0; i < count; i++) {
         AnCache.push(getAn(i));
     }
 };
@@ -101,6 +110,12 @@ const initializeCirculationFunction = () => {
         circulation = circulation * 2 * Uinfty;
         return circulation;
     };
+};
+const cacheAirfoilCirculation = () => {
+    airfoilCirculationCache = [];
+    for (let i = 0; i < pointCount; i++) {
+        airfoilCirculationCache.push(circFunc(mapPointNumberToTheta(i)));
+    }
 };
 //Plotting stuff here
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
@@ -166,15 +181,21 @@ const performPlotOperation = (pointCount) => {
             break;
     }
 };
-performPlotOperation(200);
+performPlotOperation(pointCount);
 submitBut.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Submitted");
-    performPlotOperation(200);
+    performPlotOperation(pointCount);
     console.log(getAn(0));
+    // cacheAn(15)
+    // console.log(AnCache)
 });
 plotOptionMenu.addEventListener("change", () => {
     // Update the PlotOption variable to the selected value
     thingToPlot = plotOptionMenu.value;
-    performPlotOperation(200);
+    performPlotOperation(pointCount);
+});
+document.addEventListener('click', (e) => {
+    cacheAn(15);
+    console.log(AnCache);
 });

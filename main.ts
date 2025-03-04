@@ -7,16 +7,19 @@ const height = canvas.height
 
 // First better take input of airofil parameters
 let airfoilType = 1; // 0 if custom, 1 if NACA 4 digit, 2 if NACA 5 digit
-let M = 0.04;
-let P = 0.3;
-let chordLength = 4;
+let M = 0.02;
+let P = 0.4;
+let chordLength = 1;
+const pointCount = 500
+const defaultIntegrationAccuracy = 0.0001
 
 let T = 0.12;
 const Uinfty = 1;
-const AOA = 10*Math.PI/180
+const AOA = 0*Math.PI/180
 
 
-const AnCache: number[] = []
+let AnCache: number[] = []
+let airfoilCirculationCache:number[] = []
 const MMenu = document.getElementById('M') as HTMLInputElement
 const PMenu = document.getElementById('P') as HTMLInputElement
 const ChordLengthMenu = document.getElementById('ChordLength') as HTMLInputElement
@@ -71,7 +74,12 @@ const camberSlope = (xVal:number):number => {
 const mapThetaToX = (theta: number): number =>  {
   return (chordLength/2)*(1-Math.cos(theta))
 }
-const integrate = (functionToIntegrate: (xIn: number) => number, lowerLimit: number, upperLimit: number, dh: number = 0.001):number => {
+const mapPointNumberToTheta = (i: number): number => {
+  const eta = i/(pointCount-1)
+  const theta = Math.acos(1-(2*eta))
+  return theta
+}
+const integrate = (functionToIntegrate: (xIn: number) => number, lowerLimit: number, upperLimit: number, dh: number = defaultIntegrationAccuracy):number => {
   let x = lowerLimit;
   let result = 0;
   if(upperLimit<lowerLimit){
@@ -100,7 +108,8 @@ const getAn = (n:number) => {
 
 
 const cacheAn = (count: number)=> {
-  for(let i = AnCache.length; i< count; i++){
+  AnCache = []
+  for(let i = 0; i< count; i++){
     AnCache.push(getAn(i));
   }
 }
@@ -120,6 +129,12 @@ const initializeCirculationFunction = () => {
 
     circulation = circulation*2*Uinfty
     return circulation
+  }
+}
+const cacheAirfoilCirculation = () => {
+  airfoilCirculationCache = []
+  for(let i = 0; i < pointCount; i++){
+    airfoilCirculationCache.push(circFunc(mapPointNumberToTheta(i)))
   }
 }
 
@@ -223,18 +238,24 @@ const performPlotOperation = (pointCount: number) => {
       
     }
     
-    performPlotOperation(200)
+    performPlotOperation(pointCount)
     
     submitBut.addEventListener("click", (e: Event) => {
       e.preventDefault();
       console.log("Submitted");
-      performPlotOperation(200);
+      performPlotOperation(pointCount);
       console.log(getAn(0))
+      // cacheAn(15)
+      // console.log(AnCache)
     });
     
     
     plotOptionMenu.addEventListener("change", () => {
       // Update the PlotOption variable to the selected value
       thingToPlot = plotOptionMenu.value;
-      performPlotOperation(200)
+      performPlotOperation(pointCount)
     });
+    document.addEventListener('click', (e:Event) => {
+      cacheAn(15)
+      console.log(AnCache)
+    })
