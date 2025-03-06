@@ -20,7 +20,7 @@ const AOA = (0 * Math.PI) / 180;
 let AnCache: number[] = [];
 let airfoilCirculationCache: number[] = [];
 const DEFAULT_LINE_THICKNESS = 1;
-const CAMBER_COLOUR = "red";
+const CAMBER_COLOUR = "white";
 const DRAW_SCALE_FACTOR = 100;
 let xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
 let yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
@@ -178,7 +178,7 @@ const cacheAirfoilCirculation = () => {
 };
 
 
-const getVelocityAtPoint = (x:number, y:number): [number, number] => {
+const getVelocityAtPoint = (spaceX:number, spaceY:number): [number, number] => {
   if(airfoilCirculationCache.length==0){
     console.warn("airfoil circulation cache is empty. Can't calculate velocity")
     console.warn("Performing automated circulation calculation and caching")
@@ -191,12 +191,13 @@ const getVelocityAtPoint = (x:number, y:number): [number, number] => {
     const theta = mapPointNumberToTheta(i);
     const circulation = airfoilCirculationCache[i]
     const ds = Math.sqrt(camberSlope(mapThetaToX(theta))**2 + 1)*dx
-    const delX =  -(x - mapPointNumberToX(i))
-    const delY = y - camberFunction(mapPointNumberToX(i))
+    const delX =  -(spaceX - mapPointNumberToX(i))
+    const delY = spaceY - camberFunction(mapPointNumberToX(i))
     const rSquared = delX**2 + delY**2
     vel[0] += circulation*ds*delY/(2*Math.PI*rSquared)
     vel[1] += circulation*ds*delX/(2*Math.PI*rSquared)
   }
+  // console.log("Veclocity of point returns: ", vel)
   return vel
 } 
 
@@ -213,9 +214,12 @@ const mapSpaceToCanvas = (realX: number, realY: number): [number, number] => {
   const canvasY = yOffset - realY*DRAW_SCALE_FACTOR
   return [canvasX, canvasY]
 }
-const mapCanvasToSpace = (canvasX: number, canvasY: number):[number, number] => {
+const mapCanvasToSpace = (canvasX: number, canvasY: number, shouldFloor: boolean = false):[number, number] => {
   const spaceX = (canvasX - xOffset)/DRAW_SCALE_FACTOR
   const spaceY = (yOffset-canvasY)/DRAW_SCALE_FACTOR
+  if(shouldFloor){
+    return [Math.floor(spaceX), Math.floor(spaceY)]
+  }
   return [spaceX, spaceY]
 }
 const plotAirfoilFunction = (
@@ -245,10 +249,7 @@ const plotAirfoilFunction = (
 };
 
 const plotCamberSlope = (
-  xStart: number,
-  yStart: number,
   pointCount: number,
-  scaleFactor: number,
   lwidth: number,
   colour: string
 ) => {
@@ -312,7 +313,34 @@ const performPlotOperation = (pointCount: number) => {
 
 
 // Vector field plotting
+const plotVectorField = (countMaxXY: number): void => {
+  const SWCornerCoords = mapCanvasToSpace(0, canvas.height, true)
+  const NECornerCoords = mapCanvasToSpace(canvas.width, 0, true)
+  ctx.strokeStyle = "blue"
+  const spacing = 4
+  ctx.lineWidth = 2
+  const dx = 20
+  console.log('Drawing vector fields')
+  console.log(SWCornerCoords, NECornerCoords)
+  for(let i = SWCornerCoords[0]; i<NECornerCoords[0]; i+=0.3){
+    for(let j = SWCornerCoords[1]; j<NECornerCoords[1]; j+=0.3){
+      const vel = getVelocityAtPoint(i, j)
+      const sensitivity = 1
+      const biasVal =10
+      const plottingVal = biasVal*(255/(6.2830)) *Math.exp(-sensitivity*((vel[0]**2 + vel[1]**2)))
+      console.log(plottingVal)
+      ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`
+      const r = mapSpaceToCanvas(i, j)
+      ctx.beginPath()
+      ctx.moveTo(r[0], r[1])
+      ctx.lineTo(r[0] + vel[0]*dx, r[1] - vel[1]*dx)
+      // console.log("Moving to ", r)
+      ctx.stroke()
 
+    }
+  }
+
+}
 
 
 
@@ -322,11 +350,12 @@ const performPlotOperation = (pointCount: number) => {
 
 //Setup
 
-const setup = (n: number = 10) => {
+const setup = (n: number = 20) => {
 performPlotOperation(pointCount);
 cacheAn(n);
 initializeCirculationFunction();
 cacheAirfoilCirculation();
+plotVectorField(100)
 }
 
 setup()
@@ -348,6 +377,8 @@ submitBut.addEventListener("click", (e: Event) => {
   console.log("Submitted");
   performPlotOperation(pointCount);
   console.log(getAn(0));
+  setup()
+  plotVectorField(100)
   // cacheAn(15)
   // console.log(AnCache)
 });
@@ -357,9 +388,20 @@ plotOptionMenu.addEventListener("change", () => {
   thingToPlot = plotOptionMenu.value;
   performPlotOperation(pointCount);
 });
-document.addEventListener("click", (e: Event) => {
+document.addEventListener("click", (e: MouseEvent) => {
   cacheAn(15);
   // console.log(AnCache);
   // console.log(airfoilCirculationCache);
-  // console.log(getVelocityAtPoint(e.))
+  console.log(getVelocityAtPoint(...mapSpaceToCanvas(e.layerX, e.layerY)))
 });
+document.addEventListener("mousemove", (e:MouseEvent) => {
+  const [i,j] =  mapCanvasToSpace(e.layerX, e.layerY)
+
+  // const [vx, vy] = getVelocityAtPoint(i, j)
+  // ctx.beginPath()
+  // ctx.strokeStyle = "green"
+  // ctx.moveTo(e.layerX, e.layerY)
+  // ctx.lineTo(...mapSpaceToCanvas(i + 2*vx, j+2*vy))
+  // ctx.stroke()
+
+})
