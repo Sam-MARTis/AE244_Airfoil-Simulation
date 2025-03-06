@@ -17,11 +17,11 @@ const Uinfty = 1;
 const AOA = (0 * Math.PI) / 180;
 let AnCache = [];
 let airfoilCirculationCache = [];
-let xOffset = width / 2;
-let yOffset = height / 2;
 const DEFAULT_LINE_THICKNESS = 1;
 const CAMBER_COLOUR = "red";
 const DRAW_SCALE_FACTOR = 100;
+let xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
+let yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 let thingToPlot = "camberLine";
 const MMenu = document.getElementById("M");
 const PMenu = document.getElementById("P");
@@ -154,6 +154,11 @@ const getVelocityAtPoint = (x, y) => {
     return vel;
 };
 //Plotting stuff here
+const mapSpaceToCanvas = (realX, realY) => {
+    const spaceX = xOffset + realX * DRAW_SCALE_FACTOR;
+    const spaceY = yOffset - realY * DRAW_SCALE_FACTOR;
+    return [spaceX, spaceY];
+};
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const dx = chordLength / (pointCount - 1);
@@ -165,8 +170,9 @@ const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor
         // ctx.beginPath()
         const x = i * dx;
         const y = functionIn(x);
-        ctx.lineTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
-        ctx.moveTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
+        const dr = mapSpaceToCanvas(x, y);
+        ctx.lineTo(dr[0], dr[1]);
+        ctx.moveTo(dr[0], dr[1]);
         ctx.stroke();
     }
     ctx.stroke();
@@ -182,8 +188,9 @@ const plotCamberSlope = (xStart, yStart, pointCount, scaleFactor, lwidth, colour
         // ctx.beginPath()
         const x = i * dx;
         const y = camberSlope(x);
-        ctx.lineTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
-        ctx.moveTo(xStart + x * scaleFactor, yStart - y * scaleFactor);
+        const dr = mapSpaceToCanvas(x, y);
+        ctx.lineTo(dr[0], dr[1]);
+        ctx.moveTo(dr[0], dr[1]);
         ctx.stroke();
     }
     ctx.stroke();
@@ -192,13 +199,13 @@ const getUserMenuInput = () => {
     M = parseFloat(MMenu.value) / 100;
     P = parseFloat(PMenu.value) / 10;
     chordLength = parseFloat(ChordLengthMenu.value);
+    xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
+    yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 };
 // initializeCamberFunction()
 // plotCamberLine(100, 100, 500, 100, 1, "red")
 const performPlotOperation = (pointCount) => {
     getUserMenuInput();
-    xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
-    yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     console.log("Performing plot operation");
     switch (thingToPlot) {
@@ -212,6 +219,8 @@ const performPlotOperation = (pointCount) => {
     }
 };
 // Vector field plotting
+const plotVectorField = () => {
+};
 //Setup
 const setup = (n = 10) => {
     performPlotOperation(pointCount);
@@ -236,6 +245,7 @@ plotOptionMenu.addEventListener("change", () => {
 });
 document.addEventListener("click", (e) => {
     cacheAn(15);
-    console.log(AnCache);
-    console.log(airfoilCirculationCache);
+    // console.log(AnCache);
+    // console.log(airfoilCirculationCache);
+    // console.log(getVelocityAtPoint(e.))
 });
