@@ -209,16 +209,18 @@ const getVelocityAtPoint = (x:number, y:number): [number, number] => {
 
 //Plotting stuff here
 const mapSpaceToCanvas = (realX: number, realY: number): [number, number] => {
-  const spaceX = xOffset + realX*DRAW_SCALE_FACTOR
-  const spaceY = yOffset - realY*DRAW_SCALE_FACTOR
+  const canvasX = xOffset + realX*DRAW_SCALE_FACTOR
+  const canvasY = yOffset - realY*DRAW_SCALE_FACTOR
+  return [canvasX, canvasY]
+}
+const mapCanvasToSpace = (canvasX: number, canvasY: number):[number, number] => {
+  const spaceX = (canvasX - xOffset)/DRAW_SCALE_FACTOR
+  const spaceY = (yOffset-canvasY)/DRAW_SCALE_FACTOR
   return [spaceX, spaceY]
 }
 const plotAirfoilFunction = (
   functionIn: (xNum: number) => number,
-  xStart: number,
-  yStart: number,
   pointCount: number,
-  scaleFactor: number,
   lwidth: number,
   colour: string
 ) => {
@@ -227,7 +229,7 @@ const plotAirfoilFunction = (
   ctx.beginPath();
   ctx.lineWidth = lwidth;
   ctx.strokeStyle = colour;
-  ctx.moveTo(xStart, yStart - functionIn(0) * scaleFactor);
+  ctx.moveTo(...mapSpaceToCanvas(0, functionIn(0)));
 
   for (let i = 0; i < pointCount; i++) {
     // ctx.beginPath()
@@ -255,7 +257,7 @@ const plotCamberSlope = (
   ctx.beginPath();
   ctx.lineWidth = lwidth;
   ctx.strokeStyle = colour;
-  ctx.moveTo(xStart, yStart);
+  ctx.moveTo(...mapSpaceToCanvas(0, camberSlope(0)));
 
   for (let i = 0; i < pointCount; i++) {
     // ctx.beginPath()
@@ -291,10 +293,7 @@ const performPlotOperation = (pointCount: number) => {
       initializeCamberFunction();
       plotAirfoilFunction(
         camberFunction,
-        xOffset,
-        yOffset,
         pointCount,
-        DRAW_SCALE_FACTOR,
         DEFAULT_LINE_THICKNESS,
         CAMBER_COLOUR
       );
@@ -302,10 +301,7 @@ const performPlotOperation = (pointCount: number) => {
     case "camberSlope":
       plotAirfoilFunction(
         camberSlope,
-        xOffset,
-        yOffset,
         pointCount,
-        DRAW_SCALE_FACTOR,
         DEFAULT_LINE_THICKNESS,
         CAMBER_COLOUR
       );
@@ -317,9 +313,7 @@ const performPlotOperation = (pointCount: number) => {
 
 // Vector field plotting
 
-const plotVectorField = () => {
 
-}
 
 
 

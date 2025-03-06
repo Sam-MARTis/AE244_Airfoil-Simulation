@@ -155,17 +155,22 @@ const getVelocityAtPoint = (x, y) => {
 };
 //Plotting stuff here
 const mapSpaceToCanvas = (realX, realY) => {
-    const spaceX = xOffset + realX * DRAW_SCALE_FACTOR;
-    const spaceY = yOffset - realY * DRAW_SCALE_FACTOR;
+    const canvasX = xOffset + realX * DRAW_SCALE_FACTOR;
+    const canvasY = yOffset - realY * DRAW_SCALE_FACTOR;
+    return [canvasX, canvasY];
+};
+const mapCanvasToSpace = (canvasX, canvasY) => {
+    const spaceX = (canvasX - xOffset) / DRAW_SCALE_FACTOR;
+    const spaceY = (yOffset - canvasY) / DRAW_SCALE_FACTOR;
     return [spaceX, spaceY];
 };
-const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
+const plotAirfoilFunction = (functionIn, pointCount, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const dx = chordLength / (pointCount - 1);
     ctx.beginPath();
     ctx.lineWidth = lwidth;
     ctx.strokeStyle = colour;
-    ctx.moveTo(xStart, yStart - functionIn(0) * scaleFactor);
+    ctx.moveTo(...mapSpaceToCanvas(0, functionIn(0)));
     for (let i = 0; i < pointCount; i++) {
         // ctx.beginPath()
         const x = i * dx;
@@ -183,7 +188,7 @@ const plotCamberSlope = (xStart, yStart, pointCount, scaleFactor, lwidth, colour
     ctx.beginPath();
     ctx.lineWidth = lwidth;
     ctx.strokeStyle = colour;
-    ctx.moveTo(xStart, yStart);
+    ctx.moveTo(...mapSpaceToCanvas(0, camberSlope(0)));
     for (let i = 0; i < pointCount; i++) {
         // ctx.beginPath()
         const x = i * dx;
@@ -211,16 +216,14 @@ const performPlotOperation = (pointCount) => {
     switch (thingToPlot) {
         case "camberLine":
             initializeCamberFunction();
-            plotAirfoilFunction(camberFunction, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+            plotAirfoilFunction(camberFunction, pointCount, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
             break;
         case "camberSlope":
-            plotAirfoilFunction(camberSlope, xOffset, yOffset, pointCount, DRAW_SCALE_FACTOR, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
+            plotAirfoilFunction(camberSlope, pointCount, DEFAULT_LINE_THICKNESS, CAMBER_COLOUR);
             break;
     }
 };
 // Vector field plotting
-const plotVectorField = () => {
-};
 //Setup
 const setup = (n = 10) => {
     performPlotOperation(pointCount);
