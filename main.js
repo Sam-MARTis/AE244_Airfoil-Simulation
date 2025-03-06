@@ -14,12 +14,12 @@ const pointCount = 500;
 const defaultIntegrationAccuracy = 0.0001;
 let T = 0.12;
 const Uinfty = 1;
-const AOA = 0 * Math.PI / 180;
+const AOA = (0 * Math.PI) / 180;
 let AnCache = [];
 let airfoilCirculationCache = [];
-const MMenu = document.getElementById('M');
-const PMenu = document.getElementById('P');
-const ChordLengthMenu = document.getElementById('ChordLength');
+const MMenu = document.getElementById("M");
+const PMenu = document.getElementById("P");
+const ChordLengthMenu = document.getElementById("ChordLength");
 const submitBut = document.getElementById("Submit");
 const plotOptionMenu = document.getElementById("plotOptions");
 let camberFunction = (x) => {
@@ -36,10 +36,12 @@ const initializeCamberFunction = () => {
         camberFunction = (x) => {
             const xc = x / chordLength;
             if (xc < P) {
-                return chordLength * (M / Math.pow(P, 2)) * (2 * P * xc - Math.pow(xc, 2));
+                return (chordLength * (M / Math.pow(P, 2)) * (2 * P * xc - Math.pow(xc, 2)));
             }
             else if (xc > P) {
-                return (chordLength * (M / Math.pow(1 - P, 2)) * (1 - 2 * P + 2 * P * xc - Math.pow(xc, 2)));
+                return (chordLength *
+                    (M / Math.pow(1 - P, 2)) *
+                    (1 - 2 * P + 2 * P * xc - Math.pow(xc, 2)));
             }
             else {
                 return -100;
@@ -63,7 +65,7 @@ const mapThetaToX = (theta) => {
 };
 const mapPointNumberToTheta = (i) => {
     const eta = i / (pointCount - 1);
-    const theta = Math.acos(1 - (2 * eta));
+    const theta = Math.acos(1 - 2 * eta);
     return theta;
 };
 const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = defaultIntegrationAccuracy) => {
@@ -86,7 +88,7 @@ const getAn = (n) => {
         return camberSlope(mapThetaToX(theta)) * Math.cos(n * theta);
     };
     if (n == 0) {
-        return AOA - ((1 / Math.PI) * integrate(integrand, 0, Math.PI));
+        return AOA - (1 / Math.PI) * integrate(integrand, 0, Math.PI);
     }
     return (2 / Math.PI) * integrate(integrand, 0, Math.PI);
 };
@@ -96,14 +98,19 @@ const cacheAn = (count) => {
         AnCache.push(getAn(i));
     }
 };
-let circFunc = (theta) => { return 0; };
+let circFunc = (theta) => {
+    return 0;
+};
 const initializeCirculationFunction = () => {
     circFunc = (theta) => {
+        if (theta < 0.001 * chordLength) {
+            return 0; //Handles infinity
+        }
         let circulation = 0;
         if (AnCache.length == 0) {
             throw Error("Unable to initialize circulation function due to 'An' cache being empty");
         }
-        circulation += (AnCache[0] * (1 + Math.cos(theta)) / Math.sin(theta));
+        circulation += (AnCache[0] * (1 + Math.cos(theta))) / Math.sin(theta);
         for (let i = 1; i < AnCache.length; i++) {
             circulation += AnCache[i] * Math.sin(theta);
         }
@@ -167,8 +174,8 @@ const DRAW_SCALE_FACTOR = 100;
 let thingToPlot = "camberLine";
 const performPlotOperation = (pointCount) => {
     getUserMenuInput();
-    xOffset = canvas.width / 2 - chordLength * DRAW_SCALE_FACTOR / 2;
-    yOffset = canvas.height / 2 + M * chordLength * DRAW_SCALE_FACTOR / 2;
+    xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
+    yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     console.log("Performing plot operation");
     switch (thingToPlot) {
@@ -181,7 +188,13 @@ const performPlotOperation = (pointCount) => {
             break;
     }
 };
-performPlotOperation(pointCount);
+const setup = (n = 10) => {
+    performPlotOperation(pointCount);
+    cacheAn(n);
+    initializeCirculationFunction();
+    cacheAirfoilCirculation();
+};
+setup();
 submitBut.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Submitted");
@@ -195,7 +208,8 @@ plotOptionMenu.addEventListener("change", () => {
     thingToPlot = plotOptionMenu.value;
     performPlotOperation(pointCount);
 });
-document.addEventListener('click', (e) => {
+document.addEventListener("click", (e) => {
     cacheAn(15);
     console.log(AnCache);
+    console.log(airfoilCirculationCache);
 });
