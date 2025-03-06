@@ -17,6 +17,12 @@ const Uinfty = 1;
 const AOA = (0 * Math.PI) / 180;
 let AnCache = [];
 let airfoilCirculationCache = [];
+let xOffset = width / 2;
+let yOffset = height / 2;
+const DEFAULT_LINE_THICKNESS = 1;
+const CAMBER_COLOUR = "red";
+const DRAW_SCALE_FACTOR = 100;
+let thingToPlot = "camberLine";
 const MMenu = document.getElementById("M");
 const PMenu = document.getElementById("P");
 const ChordLengthMenu = document.getElementById("ChordLength");
@@ -33,8 +39,8 @@ const initializeCamberFunction = () => {
         };
     }
     else if (airfoilType == 1) {
-        camberFunction = (x) => {
-            const xc = x / chordLength;
+        camberFunction = (xVal) => {
+            const xc = xVal / chordLength;
             if (xc < P) {
                 return (chordLength * (M / Math.pow(P, 2)) * (2 * P * xc - Math.pow(xc, 2)));
             }
@@ -67,6 +73,9 @@ const mapPointNumberToTheta = (i) => {
     const eta = i / (pointCount - 1);
     const theta = Math.acos(1 - 2 * eta);
     return theta;
+};
+const mapPointNumberToX = (i) => {
+    return i * chordLength / (pointCount - 1);
 };
 const integrate = (functionToIntegrate, lowerLimit, upperLimit, dh = defaultIntegrationAccuracy) => {
     let x = lowerLimit;
@@ -124,6 +133,26 @@ const cacheAirfoilCirculation = () => {
         airfoilCirculationCache.push(circFunc(mapPointNumberToTheta(i)));
     }
 };
+const getVelocityAtPoint = (x, y) => {
+    if (airfoilCirculationCache.length == 0) {
+        console.warn("airfoil circulation cache is empty. Can't calculate velocity");
+        console.warn("Performing automated circulation calculation and caching");
+        cacheAirfoilCirculation();
+    }
+    const vel = [Uinfty * Math.cos(AOA), Uinfty * Math.sin(AOA)];
+    const dx = chordLength / pointCount;
+    for (let i = 0; i < pointCount; i++) {
+        const theta = mapPointNumberToTheta(i);
+        const circulation = airfoilCirculationCache[i];
+        const ds = Math.sqrt(camberSlope(mapThetaToX(theta)) ** 2 + 1) * dx;
+        const delX = -(x - mapPointNumberToX(i));
+        const delY = y - camberFunction(mapPointNumberToX(i));
+        const rSquared = delX ** 2 + delY ** 2;
+        vel[0] += circulation * ds * delY / (2 * Math.PI * rSquared);
+        vel[1] += circulation * ds * delX / (2 * Math.PI * rSquared);
+    }
+    return vel;
+};
 //Plotting stuff here
 const plotAirfoilFunction = (functionIn, xStart, yStart, pointCount, scaleFactor, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -166,12 +195,6 @@ const getUserMenuInput = () => {
 };
 // initializeCamberFunction()
 // plotCamberLine(100, 100, 500, 100, 1, "red")
-let xOffset = width / 2;
-let yOffset = height / 2;
-const DEFAULT_LINE_THICKNESS = 1;
-const CAMBER_COLOUR = "red";
-const DRAW_SCALE_FACTOR = 100;
-let thingToPlot = "camberLine";
 const performPlotOperation = (pointCount) => {
     getUserMenuInput();
     xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
@@ -188,6 +211,8 @@ const performPlotOperation = (pointCount) => {
             break;
     }
 };
+// Vector field plotting
+//Setup
 const setup = (n = 10) => {
     performPlotOperation(pointCount);
     cacheAn(n);
@@ -195,6 +220,7 @@ const setup = (n = 10) => {
     cacheAirfoilCirculation();
 };
 setup();
+//Event listeners
 submitBut.addEventListener("click", (e) => {
     e.preventDefault();
     console.log("Submitted");
