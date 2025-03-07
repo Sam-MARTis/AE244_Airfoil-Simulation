@@ -15,7 +15,7 @@ const defaultIntegrationAccuracy = 0.0001;
 
 let T = 0.12;
 const Uinfty = 1;
-const AOA = (0 * Math.PI) / 180;
+let AOA = (0 * Math.PI) / 180;
 
 let AnCache: number[] = [];
 let airfoilCirculationCache: number[] = [];
@@ -35,7 +35,7 @@ const submitBut = document.getElementById("Submit") as HTMLElement;
 const plotOptionMenu = document.getElementById(
   "plotOptions"
 ) as HTMLSelectElement;
-
+const AOAMenu = document.getElementById("AOA") as HTMLInputElement;
 let camberFunction = (x: number): number => {
   return 0;
 };
@@ -275,6 +275,7 @@ const plotCamberSlope = (
 const getUserMenuInput = () => {
   M = parseFloat(MMenu.value) / 100;
   P = parseFloat(PMenu.value) / 10;
+  AOA = (parseFloat(AOAMenu.value) * Math.PI) / 180;
   chordLength = parseFloat(ChordLengthMenu.value);
   xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
   yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
@@ -313,17 +314,16 @@ const performPlotOperation = (pointCount: number) => {
 
 
 // Vector field plotting
-const plotVectorField = (countMaxXY: number): void => {
+const plotVectorField = (spacing: number = 0.3): void => {
   const SWCornerCoords = mapCanvasToSpace(0, canvas.height, true)
   const NECornerCoords = mapCanvasToSpace(canvas.width, 0, true)
   ctx.strokeStyle = "blue"
-  const spacing = 4
   ctx.lineWidth = 2
   const dx = 20
   console.log('Drawing vector fields')
   console.log(SWCornerCoords, NECornerCoords)
-  for(let i = SWCornerCoords[0]; i<NECornerCoords[0]; i+=0.3){
-    for(let j = SWCornerCoords[1]; j<NECornerCoords[1]; j+=0.3){
+  for(let i = SWCornerCoords[0]; i<NECornerCoords[0]; i+=spacing){
+    for(let j = SWCornerCoords[1]; j<NECornerCoords[1]; j+=spacing){
       const vel = getVelocityAtPoint(i, j)
       const sensitivity = 1
       const biasVal =10
@@ -355,7 +355,7 @@ performPlotOperation(pointCount);
 cacheAn(n);
 initializeCirculationFunction();
 cacheAirfoilCirculation();
-plotVectorField(100)
+plotVectorField()
 }
 
 setup()
@@ -378,7 +378,7 @@ submitBut.addEventListener("click", (e: Event) => {
   performPlotOperation(pointCount);
   console.log(getAn(0));
   setup()
-  plotVectorField(100)
+  plotVectorField()
   // cacheAn(15)
   // console.log(AnCache)
 });
