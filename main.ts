@@ -36,6 +36,11 @@ const plotOptionMenu = document.getElementById(
   "plotOptions"
 ) as HTMLSelectElement;
 const AOAMenu = document.getElementById("AOA") as HTMLInputElement;
+const circulationSubmitBut = document.getElementById("circulationSubmit") as HTMLElement;
+
+
+
+
 let camberFunction = (x: number): number => {
   return 0;
 };
@@ -312,6 +317,34 @@ const performPlotOperation = (pointCount: number) => {
   }
 };
 
+//Circulation calculation function
+const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
+  let circValue = 0
+  const SWCornerCoords = mapCanvasToSpace(canvas.width*(1/4), canvas.height*(3/4), true)
+  const NECornerCoords = mapCanvasToSpace(canvas.width*(3/4), canvas.height*(1/4), true)
+  for(let i = SWCornerCoords[0]; i<NECornerCoords[0]; i+=dx){
+    circValue += getVelocityAtPoint(i, NECornerCoords[1])[0]*dx - getVelocityAtPoint(i, SWCornerCoords[1])[0]*dx
+  }
+  for(let j = SWCornerCoords[1]; j<NECornerCoords[1]; j+=dx){
+    circValue += getVelocityAtPoint(SWCornerCoords[0], j)[1]*dx - getVelocityAtPoint(NECornerCoords[0], j)[1]*dx
+  }
+  ctx.beginPath()
+  ctx.strokeStyle = "green"
+  ctx.moveTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
+  ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], SWCornerCoords[1]))
+  ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], NECornerCoords[1]))
+  ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], NECornerCoords[1]))
+  ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
+  ctx.stroke()
+  return circValue
+}
+
+
+  // console.log("Circulation value is: ", circValue)
+
+
+
+
 
 // Vector field plotting
 const plotVectorField = (spacing: number = 0.3): void => {
@@ -403,5 +436,13 @@ document.addEventListener("mousemove", (e:MouseEvent) => {
   // ctx.moveTo(e.layerX, e.layerY)
   // ctx.lineTo(...mapSpaceToCanvas(i + 2*vx, j+2*vy))
   // ctx.stroke()
+
+})
+circulationSubmitBut.addEventListener("click", (e:Event) => {
+  e.preventDefault()
+  const circVal = calculateAndPlotCirculationViaLineIntegral(0.01)
+  
+  // setup()
+  // plotVectorField()
 
 })
