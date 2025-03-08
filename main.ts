@@ -37,7 +37,7 @@ const plotOptionMenu = document.getElementById(
 ) as HTMLSelectElement;
 const AOAMenu = document.getElementById("AOA") as HTMLInputElement;
 const circulationSubmitBut = document.getElementById("circulationSubmit") as HTMLElement;
-
+const circulationOutput = document.getElementById("circulationOutput") as HTMLElement;
 
 
 
@@ -320,8 +320,9 @@ const performPlotOperation = (pointCount: number) => {
 //Circulation calculation function
 const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
   let circValue = 0
-  const SWCornerCoords = mapCanvasToSpace(canvas.width*(1/4), canvas.height*(3/4), true)
-  const NECornerCoords = mapCanvasToSpace(canvas.width*(3/4), canvas.height*(1/4), true)
+  const SWCornerCoords = [-chordLength*0.1, -chordLength*M*3]
+  // const NECornerCoords = mapCanvasToSpace(canvas.width*(1/4), canvas.height*(1/5), true)
+  const NECornerCoords = [chordLength*1.1, chordLength*M*3]
   for(let i = SWCornerCoords[0]; i<NECornerCoords[0]; i+=dx){
     circValue += getVelocityAtPoint(i, NECornerCoords[1])[0]*dx - getVelocityAtPoint(i, SWCornerCoords[1])[0]*dx
   }
@@ -348,8 +349,8 @@ const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
 
 // Vector field plotting
 const plotVectorField = (spacing: number = 0.3): void => {
-  const SWCornerCoords = mapCanvasToSpace(0, canvas.height, true)
-  const NECornerCoords = mapCanvasToSpace(canvas.width, 0, true)
+  const SWCornerCoords = mapCanvasToSpace(0, canvas.height, false)
+  const NECornerCoords = mapCanvasToSpace(canvas.width, 0, false)
   ctx.strokeStyle = "blue"
   ctx.lineWidth = 2
   const dx = 20
@@ -441,7 +442,7 @@ document.addEventListener("mousemove", (e:MouseEvent) => {
 circulationSubmitBut.addEventListener("click", (e:Event) => {
   e.preventDefault()
   const circVal = calculateAndPlotCirculationViaLineIntegral(0.01)
-  
+  circulationOutput.innerHTML = `Circulation value is: ${circVal}`
   // setup()
   // plotVectorField()
 

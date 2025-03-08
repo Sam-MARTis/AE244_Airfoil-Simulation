@@ -30,6 +30,7 @@ const submitBut = document.getElementById("Submit");
 const plotOptionMenu = document.getElementById("plotOptions");
 const AOAMenu = document.getElementById("AOA");
 const circulationSubmitBut = document.getElementById("circulationSubmit");
+const circulationOutput = document.getElementById("circulationOutput");
 let camberFunction = (x) => {
     return 0;
 };
@@ -231,78 +232,98 @@ const performPlotOperation = (pointCount) => {
     }
 };
 //Circulation calculation function
-const calculateAndPlotCirculationViaLineIntegral = (subPoints = 100) => {
+const calculateAndPlotCirculationViaLineIntegral = (dx = 0.01) => {
     let circValue = 0;
-    const dsSpace = (chordLength * 4 + 4 * chordLength * M) / subPoints;
-    // Vector field plotting
-    const plotVectorField = (spacing = 0.3) => {
-        const SWCornerCoords = mapCanvasToSpace(0, canvas.height, true);
-        const NECornerCoords = mapCanvasToSpace(canvas.width, 0, true);
-        ctx.strokeStyle = "blue";
-        ctx.lineWidth = 2;
-        const dx = 20;
-        console.log('Drawing vector fields');
-        console.log(SWCornerCoords, NECornerCoords);
-        for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += spacing) {
-            for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += spacing) {
-                const vel = getVelocityAtPoint(i, j);
-                const sensitivity = 1;
-                const biasVal = 10;
-                const plottingVal = biasVal * (255 / (6.2830)) * Math.exp(-sensitivity * ((vel[0] ** 2 + vel[1] ** 2)));
-                console.log(plottingVal);
-                ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`;
-                const r = mapSpaceToCanvas(i, j);
-                ctx.beginPath();
-                ctx.moveTo(r[0], r[1]);
-                ctx.lineTo(r[0] + vel[0] * dx, r[1] - vel[1] * dx);
-                // console.log("Moving to ", r)
-                ctx.stroke();
-            }
-        }
-    };
-    //Setup
-    const setup = (n = 20) => {
-        performPlotOperation(pointCount);
-        cacheAn(n);
-        initializeCirculationFunction();
-        cacheAirfoilCirculation();
-        plotVectorField();
-    };
-    setup();
-    //Event listeners
-    submitBut.addEventListener("click", (e) => {
-        e.preventDefault();
-        console.log("Submitted");
-        performPlotOperation(pointCount);
-        console.log(getAn(0));
-        setup();
-        plotVectorField();
-        // cacheAn(15)
-        // console.log(AnCache)
-    });
-    plotOptionMenu.addEventListener("change", () => {
-        // Update the PlotOption variable to the selected value
-        thingToPlot = plotOptionMenu.value;
-        performPlotOperation(pointCount);
-    });
-    document.addEventListener("click", (e) => {
-        cacheAn(15);
-        // console.log(AnCache);
-        // console.log(airfoilCirculationCache);
-        console.log(getVelocityAtPoint(...mapSpaceToCanvas(e.layerX, e.layerY)));
-    });
-    document.addEventListener("mousemove", (e) => {
-        const [i, j] = mapCanvasToSpace(e.layerX, e.layerY);
-        // const [vx, vy] = getVelocityAtPoint(i, j)
-        // ctx.beginPath()
-        // ctx.strokeStyle = "green"
-        // ctx.moveTo(e.layerX, e.layerY)
-        // ctx.lineTo(...mapSpaceToCanvas(i + 2*vx, j+2*vy))
-        // ctx.stroke()
-    });
-    circulationSubmitBut.addEventListener("click", (e) => {
-        e.preventDefault();
-        // setup()
-        // plotVectorField()
-    });
+    const SWCornerCoords = [-chordLength * 0.1, -chordLength * M * 3];
+    // const NECornerCoords = mapCanvasToSpace(canvas.width*(1/4), canvas.height*(1/5), true)
+    const NECornerCoords = [chordLength * 1.1, chordLength * M * 3];
+    for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += dx) {
+        circValue += getVelocityAtPoint(i, NECornerCoords[1])[0] * dx - getVelocityAtPoint(i, SWCornerCoords[1])[0] * dx;
+    }
+    for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += dx) {
+        circValue += getVelocityAtPoint(SWCornerCoords[0], j)[1] * dx - getVelocityAtPoint(NECornerCoords[0], j)[1] * dx;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = "green";
+    ctx.moveTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]));
+    ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], SWCornerCoords[1]));
+    ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], NECornerCoords[1]));
+    ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], NECornerCoords[1]));
+    ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]));
+    ctx.stroke();
+    return circValue;
 };
+// console.log("Circulation value is: ", circValue)
+// Vector field plotting
+const plotVectorField = (spacing = 0.3) => {
+    const SWCornerCoords = mapCanvasToSpace(0, canvas.height, false);
+    const NECornerCoords = mapCanvasToSpace(canvas.width, 0, false);
+    ctx.strokeStyle = "blue";
+    ctx.lineWidth = 2;
+    const dx = 20;
+    console.log('Drawing vector fields');
+    console.log(SWCornerCoords, NECornerCoords);
+    for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += spacing) {
+        for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += spacing) {
+            const vel = getVelocityAtPoint(i, j);
+            const sensitivity = 1;
+            const biasVal = 10;
+            const plottingVal = biasVal * (255 / (6.2830)) * Math.exp(-sensitivity * ((vel[0] ** 2 + vel[1] ** 2)));
+            console.log(plottingVal);
+            ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`;
+            const r = mapSpaceToCanvas(i, j);
+            ctx.beginPath();
+            ctx.moveTo(r[0], r[1]);
+            ctx.lineTo(r[0] + vel[0] * dx, r[1] - vel[1] * dx);
+            // console.log("Moving to ", r)
+            ctx.stroke();
+        }
+    }
+};
+//Setup
+const setup = (n = 20) => {
+    performPlotOperation(pointCount);
+    cacheAn(n);
+    initializeCirculationFunction();
+    cacheAirfoilCirculation();
+    plotVectorField();
+};
+setup();
+//Event listeners
+submitBut.addEventListener("click", (e) => {
+    e.preventDefault();
+    console.log("Submitted");
+    performPlotOperation(pointCount);
+    console.log(getAn(0));
+    setup();
+    plotVectorField();
+    // cacheAn(15)
+    // console.log(AnCache)
+});
+plotOptionMenu.addEventListener("change", () => {
+    // Update the PlotOption variable to the selected value
+    thingToPlot = plotOptionMenu.value;
+    performPlotOperation(pointCount);
+});
+document.addEventListener("click", (e) => {
+    cacheAn(15);
+    // console.log(AnCache);
+    // console.log(airfoilCirculationCache);
+    console.log(getVelocityAtPoint(...mapSpaceToCanvas(e.layerX, e.layerY)));
+});
+document.addEventListener("mousemove", (e) => {
+    const [i, j] = mapCanvasToSpace(e.layerX, e.layerY);
+    // const [vx, vy] = getVelocityAtPoint(i, j)
+    // ctx.beginPath()
+    // ctx.strokeStyle = "green"
+    // ctx.moveTo(e.layerX, e.layerY)
+    // ctx.lineTo(...mapSpaceToCanvas(i + 2*vx, j+2*vy))
+    // ctx.stroke()
+});
+circulationSubmitBut.addEventListener("click", (e) => {
+    e.preventDefault();
+    const circVal = calculateAndPlotCirculationViaLineIntegral(0.01);
+    circulationOutput.innerHTML = `Circulation value is: ${circVal}`;
+    // setup()
+    // plotVectorField()
+});
