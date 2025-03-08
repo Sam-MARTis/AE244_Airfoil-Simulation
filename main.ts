@@ -207,7 +207,17 @@ const getVelocityAtPoint = (spaceX:number, spaceY:number): [number, number] => {
 } 
 
 
+const plotBoundCirculationOfCamber = (): number => {
+  let circulation = 0
+  const dx = chordLength/pointCount
+  for(let i = 0; i<pointCount; i++){
+    const theta = mapPointNumberToTheta(i)
+    const ds = Math.sqrt(camberSlope(mapThetaToX(theta))**2 + 1)*dx
+    circulation += airfoilCirculationCache[i]*ds
+  }
+  return circulation
 
+}
 
 
 
@@ -348,7 +358,7 @@ const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
 
 
 // Vector field plotting
-const plotVectorField = (spacing: number = 0.3): void => {
+const plotVectorField = (spacing: number = 0.1): void => {
   const SWCornerCoords = mapCanvasToSpace(0, canvas.height, false)
   const NECornerCoords = mapCanvasToSpace(canvas.width, 0, false)
   ctx.strokeStyle = "blue"
@@ -441,8 +451,8 @@ document.addEventListener("mousemove", (e:MouseEvent) => {
 })
 circulationSubmitBut.addEventListener("click", (e:Event) => {
   e.preventDefault()
-  const circVal = calculateAndPlotCirculationViaLineIntegral(0.01)
-  circulationOutput.innerHTML = `Circulation value is: ${circVal}`
+  const circVal = calculateAndPlotCirculationViaLineIntegral(0.001)
+  circulationOutput.innerHTML = `Circulation value is: ${circVal}  &nbsp;  <br>Bound circulation value is: ${plotBoundCirculationOfCamber()}`
   // setup()
   // plotVectorField()
 
