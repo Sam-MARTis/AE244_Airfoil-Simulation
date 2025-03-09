@@ -21,9 +21,16 @@
             <input id="AOA" name="AOA" placeholder="5" value="5"></input><br>
             <label for="Uinfty">Free stream velocity </label>
             <input id="Uinfty" name="Uinfty" placeholder="20" value="20"></input><br>
+            <label for="DrawScaleFactor">Scale factor for drawing(Magnification)</label>
+            <input id="DrawScaleFactor" name="DrawScaleFactor" placeholder="100" value="100"></input><br>
+            <label for="VFieldDensityMultiplier">Vector field density multiplier</label>
+            <input id="VFieldDensityMultiplier" name="VFieldDensityMultiplier" placeholder="1" value="1"></input><br>
+            <label for="VFieldLengthMultiplier">Vector field magnitude multiplier</label>
+            <input id="VFieldLengthMultiplier" name="VFieldLengthMultiplier" placeholder="1" value="1"></input><br>
+            <label for="showAxes">Show Axes</label>
+            <input type="checkbox" id="showAxes" name="showAxes" checked>
 
       
-            <button id="Submit" type="submit">Submit</button>
             
         </form>
         <label for="plotOptions">Plot: 
@@ -31,9 +38,11 @@
                 <option value="camberLine">Camber line</option>
                 <option value="camberSlope">Camber slope</option>
                 <!-- <option value="camberVorticity">Vorticity of Camberline </option> -->
-
+                
             </select>
         </label>
+        <br>
+        <button id="Submit" type="submit">Submit</button>
         <br>
         <br>
         CL values

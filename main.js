@@ -17,11 +17,14 @@ let Uinfty = 20;
 let AOA = (0 * Math.PI) / 180;
 let AnCache = [];
 let airfoilCirculationCache = [];
-const DEFAULT_LINE_THICKNESS = 1;
-const CAMBER_COLOUR = "white";
-const DRAW_SCALE_FACTOR = 200;
+let DRAW_SCALE_FACTOR = 200;
+let plotAxes = true;
 let xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
 let yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
+let VFieldDensityMultiplier = 1;
+let VFieldLengthMultiplier = 1;
+const DEFAULT_LINE_THICKNESS = 1;
+const CAMBER_COLOUR = "yellow";
 let thingToPlot = "camberLine";
 const MMenu = document.getElementById("M");
 const PMenu = document.getElementById("P");
@@ -30,9 +33,11 @@ const submitBut = document.getElementById("Submit");
 const plotOptionMenu = document.getElementById("plotOptions");
 const AOAMenu = document.getElementById("AOA");
 const UinftyMenu = document.getElementById("Uinfty");
-// const circulationSubmitBut = document.getElementById("circulationSubmit") as HTMLElement;
+const DrawScaleMenu = document.getElementById("DrawScaleFactor");
+const VFieldDensityMultiplierMenu = document.getElementById("VFieldDensityMultiplier");
+const VFieldLengthMultiplierMenu = document.getElementById("VFieldLengthMultiplier");
+const showAxesMenu = document.getElementById("showAxes");
 const circulationOutput = document.getElementById("circulationOutput");
-// const CLSubmitBut = document.getElementById("CLSubmit") as HTMLElement;
 const CLOutput = document.getElementById("CLOutput");
 let camberFunction = (x) => {
     return 0;
@@ -154,6 +159,9 @@ const getVelocityAtPoint = (spaceX, spaceY) => {
         const delX = -(spaceX - mapPointNumberToX(i));
         const delY = spaceY - camberFunction(mapPointNumberToX(i));
         const rSquared = delX ** 2 + delY ** 2;
+        if (rSquared < 0.0001) {
+            continue;
+        }
         vel[0] += circulation * ds * delY / (2 * Math.PI * rSquared);
         vel[1] += circulation * ds * delX / (2 * Math.PI * rSquared);
     }
@@ -205,6 +213,9 @@ const plotAirfoilFunction = (functionIn, pointCount, lwidth, colour, title = "Ca
         ctx.stroke();
     }
     ctx.stroke();
+    if (!plotAxes) {
+        return;
+    }
     const minX = Math.min(...xVals);
     const maxX = Math.max(...xVals);
     const minY = Math.min(...yVals);
@@ -215,9 +226,9 @@ const plotAirfoilFunction = (functionIn, pointCount, lwidth, colour, title = "Ca
     ctx.lineWidth = 1;
     ctx.moveTo(...mapSpaceToCanvas(minX, minY));
     ctx.textAlign = "right";
-    ctx.strokeText(`(${minX.toFixed(3)}, ${minY.toFixed(3)})`, ...mapSpaceToCanvas(minX, minY));
+    ctx.strokeText(`(${(minX).toFixed(3)}, ${(minY).toFixed(3)})`, ...mapSpaceToCanvas(minX, minY));
     ctx.lineTo(...mapSpaceToCanvas(minX, maxY));
-    ctx.strokeText(`(${minX.toFixed(3)}, ${maxY.toFixed(3)})`, ...mapSpaceToCanvas(minX, maxY));
+    ctx.strokeText(`(${(minX).toFixed(3)}, ${(maxY).toFixed(3)})`, ...mapSpaceToCanvas(minX, maxY));
     ctx.moveTo(...mapSpaceToCanvas(minX, minY));
     ctx.lineTo(...mapSpaceToCanvas(maxX, minY));
     ctx.textAlign = "left";
@@ -227,28 +238,6 @@ const plotAirfoilFunction = (functionIn, pointCount, lwidth, colour, title = "Ca
     const topY = mapCanvasToSpace(0, canvas.height / 4)[1];
     ctx.strokeText(title, ...mapSpaceToCanvas((maxX + minX) / 2, topY * 1));
     ctx.stroke();
-};
-const plotAirfoilFunctionImage = (functionIn, pointCount, lwidth, colour) => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const dx = chordLength / (pointCount - 1);
-    // ctx.beginPath();
-    // ctx.lineWidth = lwidth;
-    // ctx.strokeStyle = colour;
-    // ctx.moveTo(...mapSpaceToCanvas(0, functionIn(0)));
-    const xVals = [];
-    const yVals = [];
-    for (let i = 0; i < pointCount; i++) {
-        // ctx.beginPath()
-        const x = i * dx;
-        const y = functionIn(x);
-        xVals.push(x);
-        yVals.push(y);
-        // const dr = mapSpaceToCanvas(x, y);
-        // ctx.lineTo(dr[0], dr[1]);
-        // ctx.moveTo(dr[0], dr[1]);
-        // ctx.stroke();
-    }
-    // ctx.stroke();
 };
 const plotCamberSlope = (pointCount, lwidth, colour) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -274,6 +263,10 @@ const getUserMenuInput = () => {
     AOA = (parseFloat(AOAMenu.value) * Math.PI) / 180;
     chordLength = parseFloat(ChordLengthMenu.value);
     Uinfty = parseFloat(UinftyMenu.value);
+    DRAW_SCALE_FACTOR = parseFloat(DrawScaleMenu.value);
+    VFieldDensityMultiplier = parseFloat(VFieldDensityMultiplierMenu.value);
+    VFieldLengthMultiplier = parseFloat(VFieldLengthMultiplierMenu.value);
+    plotAxes = showAxesMenu.checked;
     xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
     yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 };
@@ -324,13 +317,13 @@ const plotVectorField = (spacing = 0.2) => {
     ctx.strokeStyle = "blue";
     ctx.lineWidth = 2;
     const dx = 20;
-    const normalizingFactor = 2;
+    const normalizingFactor = 200 / (DRAW_SCALE_FACTOR * VFieldLengthMultiplier);
     const sensitivity = 1;
     const biasVal = 10;
     console.log('Drawing vector fields');
     console.log(SWCornerCoords, NECornerCoords);
-    for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += spacing) {
-        for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += spacing) {
+    for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += spacing / VFieldDensityMultiplier) {
+        for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += spacing / VFieldDensityMultiplier) {
             const vel = getVelocityAtPoint(i, j);
             const plottingVal = biasVal * (255 / (6.2830)) * Math.exp(-sensitivity * (((vel[0] / (Uinfty)) ** 2 + (vel[1] / (Uinfty)) ** 2)));
             console.log(plottingVal);
@@ -346,6 +339,7 @@ const plotVectorField = (spacing = 0.2) => {
 };
 //Setup
 const setup = (n = 20) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     performPlotOperation(pointCount);
     cacheAn(n);
     initializeCirculationFunction();
