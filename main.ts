@@ -45,7 +45,11 @@ const UinftyMenu = document.getElementById("Uinfty") as HTMLInputElement;
 const DrawScaleMenu = document.getElementById("DrawScaleFactor") as HTMLInputElement; 
 const VFieldDensityMultiplierMenu = document.getElementById("VFieldDensityMultiplier") as HTMLInputElement;
 const VFieldLengthMultiplierMenu = document.getElementById("VFieldLengthMultiplier") as HTMLInputElement;
-const showAxesMenu = document.getElementById("showAxes") as HTMLInputElement;
+const showAxesOption = document.getElementById("showAxes") as HTMLInputElement;
+const showCirculationBoundaryOption = document.getElementById("showCirculationBoundary") as HTMLInputElement;
+showCirculationBoundaryOption.checked =  true;
+
+
 const customFunctionMenu = document.getElementById("CustomFunctionInput") as HTMLInputElement;
 customFunctionMenu.checked = false;
 const CustomFunctionInputArea = document.getElementById("CustomFunctionInputArea") as HTMLInputElement;
@@ -72,12 +76,16 @@ const initializeCamberFunction = () => {
   if (customFunctionMenu.checked) {
     console.log("Custom function is checked");
     try {
-        camberFunction = new Function("x", `return -x*(x-1)*${CustomFunctionInputArea.value};`) as (x: number) => number;
-        if(camberFunction(0)!= 0 || camberFunction(1)!=0){
+        const camberFunctionIntermediate = new Function("x", `return ${CustomFunctionInputArea.value};`) as (x: number) => number;
+        camberFunction = (xVal: number): number => {
+          const xc = xVal / chordLength;
+          return xc*(1-xc)*camberFunctionIntermediate(xc);
+        }
+        if(camberFunction(0)!= 0 || camberFunction(chordLength)!=0){
           throw Error("Invalid custom function. Must be 0 at xc = 0 and xc=1")
         }
     } catch (e) {
-        alert("Invalid custom function");
+        alert('Invalid custom function ' + e);
         console.error(e);
     }
 } else{
@@ -371,7 +379,7 @@ const getUserMenuInput = () => {
   DRAW_SCALE_FACTOR = parseFloat(DrawScaleMenu.value);
   VFieldDensityMultiplier = parseFloat(VFieldDensityMultiplierMenu.value);
   VFieldLengthMultiplier = parseFloat(VFieldLengthMultiplierMenu.value);
-  plotAxes = showAxesMenu.checked;
+  plotAxes = showAxesOption.checked;
   xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
   yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
   
@@ -425,14 +433,16 @@ const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
   for(let j = SWCornerCoords[1]; j<NECornerCoords[1]; j+=dx){
     circValue += getVelocityAtPoint(SWCornerCoords[0], j)[1]*dx - getVelocityAtPoint(NECornerCoords[0], j)[1]*dx
   }
-  ctx.beginPath()
-  ctx.strokeStyle = "green"
-  ctx.moveTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
-  ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], SWCornerCoords[1]))
-  ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], NECornerCoords[1]))
-  ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], NECornerCoords[1]))
-  ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
-  ctx.stroke()
+  if(showCirculationBoundaryOption.checked){
+    ctx.beginPath()
+    ctx.strokeStyle = "green"
+    ctx.moveTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
+    ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], SWCornerCoords[1]))
+    ctx.lineTo(...mapSpaceToCanvas(NECornerCoords[0], NECornerCoords[1]))
+    ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], NECornerCoords[1]))
+    ctx.lineTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]))
+    ctx.stroke()
+  }
   return circValue
 }
 
