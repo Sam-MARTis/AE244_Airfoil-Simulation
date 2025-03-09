@@ -452,7 +452,7 @@ ClVsAlphaResult.addEventListener("click", (e) => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "ClVsAlpha.csv");
+    link.setAttribute("download", `ClVsAlpha_M${M}_P${P}.csv`);
     document.body.appendChild(link);
     link.click(); //Download the CSV file
 });
