@@ -23,6 +23,8 @@ let xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
 let yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 let VFieldDensityMultiplier = 1;
 let VFieldLengthMultiplier = 1;
+let alphaVals = [];
+let clVals = [];
 const DEFAULT_LINE_THICKNESS = 1;
 const CAMBER_COLOUR = "yellow";
 let thingToPlot = "camberLine";
@@ -38,21 +40,32 @@ const VFieldDensityMultiplierMenu = document.getElementById("VFieldDensityMultip
 const VFieldLengthMultiplierMenu = document.getElementById("VFieldLengthMultiplier");
 const showAxesMenu = document.getElementById("showAxes");
 const customFunctionMenu = document.getElementById("CustomFunctionInput");
-const CustomFunctionBut = document.getElementById("CustomFunctionInputArea");
-CustomFunctionBut.disabled = true;
+customFunctionMenu.checked = false;
+const CustomFunctionInputArea = document.getElementById("CustomFunctionInputArea");
+CustomFunctionInputArea.disabled = true;
+const ClVsAlphaBut = document.getElementById("ClVsAlpha");
+const ClVsAlphaResult = document.getElementById("ClVsAlphaResult");
+ClVsAlphaResult.disabled = true;
 const circulationOutput = document.getElementById("circulationOutput");
 const CLOutput = document.getElementById("CLOutput");
 let camberFunction = (x) => {
     return 0;
 };
 const initializeCamberFunction = () => {
-    if (airfoilType == 0) {
-        camberFunction = (x) => {
-            //Todo: Implement custom camber function
-            return 0;
-        };
+    if (customFunctionMenu.checked) {
+        console.log("Custom function is checked");
+        try {
+            camberFunction = new Function("x", `return -x*(x-1)*${CustomFunctionInputArea.value};`);
+            if (camberFunction(0) != 0 || camberFunction(1) != 0) {
+                throw Error("Invalid custom function. Must be 0 at xc = 0 and xc=1");
+            }
+        }
+        catch (e) {
+            alert("Invalid custom function");
+            console.error(e);
+        }
     }
-    else if (airfoilType == 1) {
+    else {
         camberFunction = (xVal) => {
             const xc = xVal / chordLength;
             if (xc < P) {
@@ -66,12 +79,6 @@ const initializeCamberFunction = () => {
             else {
                 return -100;
             }
-        };
-    }
-    else if (airfoilType == 2) {
-        camberFunction = (x) => {
-            //Todo: Implement NACA 5 digit camber function
-            return 0;
         };
     }
 };
@@ -120,6 +127,18 @@ const cacheAn = (count) => {
     for (let i = 0; i < count; i++) {
         AnCache.push(getAn(i, AOA));
     }
+};
+const performClVsAlpha = (minAlphaDegrees = -3, maxAlphaDegrees = 12, dAlphaDegrees = 0.1) => {
+    const A1 = getAn(1, AOA);
+    const clVals = [];
+    const alphaDegreesVals = [];
+    for (let alpha = minAlphaDegrees; alpha < maxAlphaDegrees; alpha += dAlphaDegrees) {
+        const alphaRad = (alpha * Math.PI) / 180;
+        const cl = Math.PI * (A1 + 2 * getAn(0, alphaRad));
+        clVals.push(cl);
+        alphaDegreesVals.push(alpha);
+    }
+    return [alphaDegreesVals, clVals];
 };
 let circFunc = (theta) => {
     return 0;
@@ -272,14 +291,6 @@ const getUserMenuInput = () => {
     plotAxes = showAxesMenu.checked;
     xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
     yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
-    if (customFunctionMenu.checked) {
-        try {
-            camberFunction = new Function("x", "return ", customFunctionMenu.value + ";");
-        }
-        catch (e) {
-            prompt("Invalid custom function");
-        }
-    }
 };
 // initializeCamberFunction()
 // plotCamberLine(100, 100, 500, 100, 1, "red")
@@ -332,12 +343,12 @@ const plotVectorField = (spacing = 0.2) => {
     const sensitivity = 1;
     const biasVal = 10;
     console.log('Drawing vector fields');
-    console.log(SWCornerCoords, NECornerCoords);
+    // console.log(SWCornerCoords, NECornerCoords)
     for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += spacing / VFieldDensityMultiplier) {
         for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += spacing / VFieldDensityMultiplier) {
             const vel = getVelocityAtPoint(i, j);
             const plottingVal = biasVal * (255 / (6.2830)) * Math.exp(-sensitivity * (((vel[0] / (Uinfty)) ** 2 + (vel[1] / (Uinfty)) ** 2)));
-            console.log(plottingVal);
+            // console.log(plottingVal)
             ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`;
             const r = mapSpaceToCanvas(i, j);
             ctx.beginPath();
@@ -385,10 +396,10 @@ const calculationTasks = () => {
     const circVal = calculateAndPlotCirculationViaLineIntegral(0.001);
     circulationOutput.innerHTML = `Circulation value is: ${circVal}  &nbsp;  <br>Bound circulation value is: ${plotBoundCirculationOfCamber()}`;
     const CLViaLift = circVal / (0.5 * (Uinfty ** 1) * chordLength);
+    const CLViaAn = Math.PI * (2 * AnCache[0] + AnCache[1]);
     if (AnCache.length < 2) {
         cacheAn(15);
     }
-    const CLViaAn = Math.PI * (2 * AnCache[0] + AnCache[1]);
     CLOutput.innerHTML = `Lift Coefficient via Kutta Joukowski: ${CLViaLift} &nbsp; <br> Lift Coefficient via pi(2A0 + A1) is: ${CLViaAn}`;
 };
 //Event listeners
@@ -409,13 +420,34 @@ customFunctionMenu.addEventListener("change", (e) => {
     if (customFunctionMenu.checked) {
         MMenu.disabled = true;
         PMenu.disabled = true;
-        CustomFunctionBut.disabled = false;
+        CustomFunctionInputArea.disabled = false;
     }
     else {
         MMenu.disabled = false;
         PMenu.disabled = false;
-        CustomFunctionBut.disabled = true;
+        CustomFunctionInputArea.disabled = true;
     }
+});
+ClVsAlphaBut.addEventListener("click", (e) => {
+    e.preventDefault();
+    const a = performClVsAlpha();
+    alphaVals = a[0];
+    clVals = a[1];
+    // Download it as csv file when clicking the ClVsAlphaResult button
+    ClVsAlphaResult.disabled = false;
+});
+ClVsAlphaResult.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (ClVsAlphaResult.disabled) {
+        return;
+    }
+    const csvContent = "data:text/csv;charset=utf-8," + alphaVals.map((e, i) => e + "," + clVals[i]).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "ClVsAlpha.csv");
+    document.body.appendChild(link);
+    link.click();
 });
 // CustomFunctionBut.addEventListener("click", (e:Event) => {
 //   e.preventDefault()
