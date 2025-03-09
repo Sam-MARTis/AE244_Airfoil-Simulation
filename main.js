@@ -37,6 +37,9 @@ const DrawScaleMenu = document.getElementById("DrawScaleFactor");
 const VFieldDensityMultiplierMenu = document.getElementById("VFieldDensityMultiplier");
 const VFieldLengthMultiplierMenu = document.getElementById("VFieldLengthMultiplier");
 const showAxesMenu = document.getElementById("showAxes");
+const customFunctionMenu = document.getElementById("CustomFunctionInput");
+const CustomFunctionBut = document.getElementById("CustomFunctionInputArea");
+CustomFunctionBut.disabled = true;
 const circulationOutput = document.getElementById("circulationOutput");
 const CLOutput = document.getElementById("CLOutput");
 let camberFunction = (x) => {
@@ -269,6 +272,14 @@ const getUserMenuInput = () => {
     plotAxes = showAxesMenu.checked;
     xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
     yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
+    if (customFunctionMenu.checked) {
+        try {
+            camberFunction = new Function("x", "return ", customFunctionMenu.value + ";");
+        }
+        catch (e) {
+            prompt("Invalid custom function");
+        }
+    }
 };
 // initializeCamberFunction()
 // plotCamberLine(100, 100, 500, 100, 1, "red")
@@ -393,6 +404,23 @@ submitBut.addEventListener("click", (e) => {
     // cacheAn(15)
     // console.log(AnCache)
 });
+customFunctionMenu.addEventListener("change", (e) => {
+    e.preventDefault();
+    if (customFunctionMenu.checked) {
+        MMenu.disabled = true;
+        PMenu.disabled = true;
+        CustomFunctionBut.disabled = false;
+    }
+    else {
+        MMenu.disabled = false;
+        PMenu.disabled = false;
+        CustomFunctionBut.disabled = true;
+    }
+});
+// CustomFunctionBut.addEventListener("click", (e:Event) => {
+//   e.preventDefault()
+// }
+// )
 plotOptionMenu.addEventListener("change", () => {
     plotOptionMenuTask();
 });

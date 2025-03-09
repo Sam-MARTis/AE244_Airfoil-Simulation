@@ -45,8 +45,9 @@ const DrawScaleMenu = document.getElementById("DrawScaleFactor") as HTMLInputEle
 const VFieldDensityMultiplierMenu = document.getElementById("VFieldDensityMultiplier") as HTMLInputElement;
 const VFieldLengthMultiplierMenu = document.getElementById("VFieldLengthMultiplier") as HTMLInputElement;
 const showAxesMenu = document.getElementById("showAxes") as HTMLInputElement;
-
-
+const customFunctionMenu = document.getElementById("CustomFunctionInput") as HTMLInputElement;
+const CustomFunctionBut = document.getElementById("CustomFunctionInputArea") as HTMLInputElement;
+CustomFunctionBut.disabled = true;
 
 const circulationOutput = document.getElementById("circulationOutput") as HTMLElement;
 const CLOutput = document.getElementById("CLOutput") as HTMLElement;
@@ -347,6 +348,14 @@ const getUserMenuInput = () => {
   plotAxes = showAxesMenu.checked;
   xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
   yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
+  
+  if(customFunctionMenu.checked){
+    try{camberFunction = new Function("x", "return ", customFunctionMenu.value + ";") as (x:number) => number;}
+    catch(e){
+      prompt("Invalid custom function")
+    }
+  }
+
 };
 // initializeCamberFunction()
 // plotCamberLine(100, 100, 500, 100, 1, "red")
@@ -526,6 +535,25 @@ submitBut.addEventListener("click", (e: Event) => {
   // console.log(AnCache)
 
 });
+customFunctionMenu.addEventListener("change", (e:Event) => {
+  e.preventDefault()
+  if(customFunctionMenu.checked){
+    MMenu.disabled = true
+    PMenu.disabled = true
+    CustomFunctionBut.disabled = false
+  }
+  else{
+    MMenu.disabled = false
+    PMenu.disabled = false
+    CustomFunctionBut.disabled = true
+  }
+})
+
+// CustomFunctionBut.addEventListener("click", (e:Event) => {
+//   e.preventDefault()
+  
+// }
+// )
 
 plotOptionMenu.addEventListener("change", () => {
   plotOptionMenuTask()
@@ -555,6 +583,7 @@ document.addEventListener("mousemove", (e:MouseEvent) => {
   // ctx.stroke()
 
 })
+
 // circulationSubmitBut.addEventListener("click", (e:Event) => {
 //   e.preventDefault()
 //   circulationSubmitButTask()
