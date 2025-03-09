@@ -126,6 +126,28 @@ const CLOutput = document.getElementById("CLOutput") as HTMLElement;
 
 // Initial setup ends here
 
+// Very important function here.
+//Responsible for updating simulation values based on user input
+const getUserMenuInput = () => {
+  M = parseFloat(MMenu.value) / 100; // NACA 4 digit series parameters
+  P = parseFloat(PMenu.value) / 10;
+  AOA = (parseFloat(AOAMenu.value) * Math.PI) / 180;
+  chordLength = parseFloat(ChordLengthMenu.value);
+  Uinfty = parseFloat(UinftyMenu.value);
+  DRAW_SCALE_FACTOR = parseFloat(DrawScaleMenu.value);
+  VFieldDensityMultiplier = parseFloat(VFieldDensityMultiplierMenu.value);
+  VFieldLengthMultiplier = parseFloat(VFieldLengthMultiplierMenu.value);
+  plotAxes = showAxesOption.checked;
+  xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
+  yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
+};
+
+
+
+
+
+
+
 
 
 let camberFunction = (x: number): number => {
@@ -372,7 +394,7 @@ const mapCanvasToSpace = (
   return [spaceX, spaceY];
 };
 
-const plotAirfoilFunction = ( //General plotting function that takes in and plots an arbitrary function
+const plotAirfoilFunction = ( //General plotting function that takes in and plots an arbitrary function. Used to plot camber and camber-slope
   functionIn: (xNum: number) => number, // Any function that takes in a number and returns a number can be passed to be plotted
   pointCount: number,
   lwidth: number,
@@ -438,28 +460,14 @@ const plotAirfoilFunction = ( //General plotting function that takes in and plot
   ctx.stroke();
 };
 
-
-const getUserMenuInput = () => {
-  M = parseFloat(MMenu.value) / 100;
-  P = parseFloat(PMenu.value) / 10;
-  AOA = (parseFloat(AOAMenu.value) * Math.PI) / 180;
-  chordLength = parseFloat(ChordLengthMenu.value);
-  Uinfty = parseFloat(UinftyMenu.value);
-  DRAW_SCALE_FACTOR = parseFloat(DrawScaleMenu.value);
-  VFieldDensityMultiplier = parseFloat(VFieldDensityMultiplierMenu.value);
-  VFieldLengthMultiplier = parseFloat(VFieldLengthMultiplierMenu.value);
-  plotAxes = showAxesOption.checked;
-  xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
-  yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
-};
-
+// Important plotting function. This is the function that plots the camber or camberline depending on user input
 const performPlotOperation = (pointCount: number) => {
   getUserMenuInput();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   console.log("Performing plot operation");
 
-  switch (thingToPlot) {
+  switch (thingToPlot) { //Thing to plot is the user input that determines what to plot. Is set by the dropdown menu
     case "camberLine":
       initializeCamberFunction();
       plotAirfoilFunction(
@@ -483,13 +491,15 @@ const performPlotOperation = (pointCount: number) => {
   }
 };
 
-const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
+const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => { //Calculate the circulation via line integral
   let circValue = 0;
   const padding = 0.1;
   const SWCornerCoords = [
     -chordLength * 0.1 - padding,
     -chordLength * M * 3 - padding,
-  ];
+  ]; //Get the coordinates of the corners of the rectangle to integrate over. 
+  //Integration domain is chosen dynamically based on the airfoil size
+  //Padding is added to ensure that the integration domain is slightly larger than the airfoil. Especially for zero camber airfoils
   const NECornerCoords = [
     chordLength * 1.1 + padding,
     chordLength * M * 3 + padding,
@@ -497,14 +507,14 @@ const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
   for (let i = SWCornerCoords[0]; i < NECornerCoords[0]; i += dx) {
     circValue +=
       getVelocityAtPoint(i, NECornerCoords[1])[0] * dx -
-      getVelocityAtPoint(i, SWCornerCoords[1])[0] * dx;
+      getVelocityAtPoint(i, SWCornerCoords[1])[0] * dx; //Calculate the circulation via line integral on the top and bottom sides of the rectangle
   }
   for (let j = SWCornerCoords[1]; j < NECornerCoords[1]; j += dx) {
     circValue +=
       getVelocityAtPoint(SWCornerCoords[0], j)[1] * dx -
-      getVelocityAtPoint(NECornerCoords[0], j)[1] * dx;
+      getVelocityAtPoint(NECornerCoords[0], j)[1] * dx; //Calculate the circulation via line integral on the left and right sides of the rectangle
   }
-  if (showCirculationBoundaryOption.checked) {
+  if (showCirculationBoundaryOption.checked) { //If the user wants to plot the integration domain, plot it
     ctx.beginPath();
     ctx.strokeStyle = "green";
     ctx.moveTo(...mapSpaceToCanvas(SWCornerCoords[0], SWCornerCoords[1]));
@@ -518,10 +528,12 @@ const calculateAndPlotCirculationViaLineIntegral = (dx: number = 0.01) => {
 };
 
 
+
 // Vector field plotting
-const plotVectorField = (spacing: number = 0.2): void => {
+
+const plotVectorField = (spacing: number = 0.2): void => { //Plot the vector field
   const SWCornerCoords = mapCanvasToSpace(0, canvas.height, false);
-  const NECornerCoords = mapCanvasToSpace(canvas.width, 0, false);
+  const NECornerCoords = mapCanvasToSpace(canvas.width, 0, false); //Get the coordinates of the corners of the canvas(rendering spaoe) and map them to the simulation space
   ctx.strokeStyle = "blue";
   ctx.lineWidth = 2;
   const dx = 20;
@@ -538,20 +550,20 @@ const plotVectorField = (spacing: number = 0.2): void => {
       let j = SWCornerCoords[1];
       j < NECornerCoords[1];
       j += spacing / VFieldDensityMultiplier
-    ) {
+    ) { //Iterate over the simulation space and plot the vectors
       const vel = getVelocityAtPoint(i, j);
       const plottingVal =
         biasVal *
         (255 / 6.283) *
         Math.exp(
           -sensitivity * ((vel[0] / Uinfty) ** 2 + (vel[1] / Uinfty) ** 2)
-        );
-      ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`;
-      const r = mapSpaceToCanvas(i, j);
+        ); //Calculate the colour of the vector based on the velocity. The choice of function is somewhat arbitrary. I have found this to work well
+      ctx.strokeStyle = `rgb(${255 - plottingVal}, 0, ${plottingVal})`; //Set the colour of the vector based on the velocity
+      const r = mapSpaceToCanvas(i, j); //Map the simulation space to the canvas space
       ctx.beginPath();
-      ctx.moveTo(r[0], r[1]);
+      ctx.moveTo(r[0], r[1]); //Plot the vector
       ctx.lineTo(
-        r[0] + (vel[0] / (Uinfty * normalizingFactor)) * dx,
+        r[0] + (vel[0] / (Uinfty * normalizingFactor)) * dx, // Plot vector direction while considering magnification
         r[1] - (vel[1] / (Uinfty * normalizingFactor)) * dx
       );
       ctx.stroke();
@@ -559,44 +571,36 @@ const plotVectorField = (spacing: number = 0.2): void => {
   }
 };
 
-//Setup
 
-const setup = (n: number = 20) => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  performPlotOperation(pointCount);
-  cacheAn(n);
-  initializeCirculationFunction();
-  cacheAirfoilCirculation();
-  plotVectorField();
-  calculationTasks();
+
+
+//Main function that combines the function. Need to be executed to start the render fresh with new parameters
+const main = (n: number = 20) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height); //Clear the canvas
+  performPlotOperation(pointCount); //Plot the camber or camber slope
+  cacheAn(n); //Cache the An values
+  initializeCirculationFunction(); //Initialize the circulation function
+  cacheAirfoilCirculation(); //Cache the airfoil circulation values
+  if(thingToPlot == "camberLine"){
+    plotVectorField(); //Plot the vector field
+  }
+  calculationTasks(); //Calculate the circulation and lift coefficient and display them
 };
 
-//Event functions
 
+
+
+//Event functions. They are a set of fixed tasks that update the UI or render or perform some calculation that is output to the user
 const plotOptionMenuTask = () => {
   thingToPlot = plotOptionMenu.value;
   performPlotOperation(pointCount);
   if (thingToPlot == "camberLine") {
-    plotVectorField();
+    plotVectorField(); // Ensures vector field is plotted when camber line is selected and not camber slope
   }
 };
 
-const circulationSubmitButTask = () => {
-  const circVal = calculateAndPlotCirculationViaLineIntegral(0.001);
-  circulationOutput.innerHTML = `Circulation value is: ${circVal}  &nbsp;  <br>Bound circulation value is: ${findBoundCirculationOfCamber()}`;
-};
 
-const CLSubmitButTask = () => {
-  const circVal = calculateAndPlotCirculationViaLineIntegral(0.001);
-
-  const CLViaLift = circVal / (0.5 * Uinfty ** 1 * chordLength);
-  if (AnCache.length < 2) {
-    cacheAn(15);
-  }
-  const CLViaAn = Math.PI * (2 * AnCache[0] + AnCache[1]);
-  CLOutput.innerHTML = `Lift Coefficient via Kutta Joukowski: ${CLViaLift} &nbsp; <br> Lift Coefficient via An is: ${CLViaAn}`;
-};
-const calculationTasks = () => {
+const calculationTasks = () => { //Calculate the circulation and lift coefficient and display them
   const circVal = calculateAndPlotCirculationViaLineIntegral(0.001);
   circulationOutput.innerHTML = `Circulation value is: ${circVal}  &nbsp;  <br>Bound circulation value is: ${findBoundCirculationOfCamber()}`;
   const CLViaLift = circVal / (0.5 * Uinfty ** 1 * chordLength);
@@ -607,30 +611,34 @@ const calculationTasks = () => {
   CLOutput.innerHTML = `Lift Coefficient via Kutta Joukowski: ${CLViaLift} &nbsp; <br> Lift Coefficient via pi(2A0 + A1) is: ${CLViaAn}`;
 };
 
-//Event listeners
-submitBut.addEventListener("click", (e: Event) => {
+
+
+
+
+//Event listeners. These activate when the user interacts with the UI elements
+submitBut.addEventListener("click", (e: Event) => { //Event listener for the submit button. When clicked, the simulation is updated based on the user input
   e.preventDefault();
   console.log("Submitted");
   performPlotOperation(pointCount);
   console.log(getAn(0, AOA));
-  setup();
+  main();
 
 
 });
-customFunctionMenu.addEventListener("change", (e: Event) => {
+customFunctionMenu.addEventListener("change", (e: Event) => { //Event listener for the custom function checkbox. If checked, the custom function input area is enabled
   e.preventDefault();
-  if (customFunctionMenu.checked) {
+  if (customFunctionMenu.checked) { //If checked, enable the custom function input area and disable the NACA input areas
     MMenu.disabled = true;
     PMenu.disabled = true;
     CustomFunctionInputArea.disabled = false;
-  } else {
+  } else { //If unchecked, enable the NACA input areas and disable the custom function input area
     MMenu.disabled = false;
     PMenu.disabled = false;
     CustomFunctionInputArea.disabled = true;
   }
 });
 
-ClVsAlphaBut.addEventListener("click", (e: Event) => {
+ClVsAlphaBut.addEventListener("click", (e: Event) => { //Event listener for the Cl vs Alpha button. When clicked, the Cl vs Alpha values are calculated and stored
   e.preventDefault();
   const a = performClVsAlpha();
   alphaVals = a[0];
@@ -638,20 +646,20 @@ ClVsAlphaBut.addEventListener("click", (e: Event) => {
   ClVsAlphaResult.disabled = false;
 });
 
-ClVsAlphaResult.addEventListener("click", (e: Event) => {
+ClVsAlphaResult.addEventListener("click", (e: Event) => { 
   e.preventDefault();
-  if (ClVsAlphaResult.disabled) {
+  if (ClVsAlphaResult.disabled) { //If the Cl vs Alpha result button is disabled, return
     return;
   }
   const csvContent =
     "data:text/csv;charset=utf-8," +
-    alphaVals.map((e, i) => e + "," + clVals[i]).join("\n");
-  const encodedUri = encodeURI(csvContent);
+    alphaVals.map((e, i) => e + "," + clVals[i]).join("\n"); //Create a CSV file with the calculated Cl vs Alpha values
+  const encodedUri = encodeURI(csvContent); 
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
   link.setAttribute("download", "ClVsAlpha.csv");
   document.body.appendChild(link);
-  link.click();
+  link.click(); //Download the CSV file
 });
 
 
@@ -664,4 +672,4 @@ plotOptionMenu.addEventListener("change", () => {
 
 
 
-setup();
+main(); //Start the simulation
