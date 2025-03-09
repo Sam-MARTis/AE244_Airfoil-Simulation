@@ -14,14 +14,14 @@ const pointCount = 500;
 const defaultIntegrationAccuracy = 0.0001;
 
 let T = 0.12;
-const Uinfty = 20;
+let Uinfty = 20;
 let AOA = (0 * Math.PI) / 180;
 
 let AnCache: number[] = [];
 let airfoilCirculationCache: number[] = [];
 const DEFAULT_LINE_THICKNESS = 1;
 const CAMBER_COLOUR = "white";
-const DRAW_SCALE_FACTOR = 100;
+const DRAW_SCALE_FACTOR = 200;
 let xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
 let yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 
@@ -36,6 +36,8 @@ const plotOptionMenu = document.getElementById(
   "plotOptions"
 ) as HTMLSelectElement;
 const AOAMenu = document.getElementById("AOA") as HTMLInputElement;
+const UinftyMenu = document.getElementById("Uinfty") as HTMLInputElement;
+
 // const circulationSubmitBut = document.getElementById("circulationSubmit") as HTMLElement;
 const circulationOutput = document.getElementById("circulationOutput") as HTMLElement;
 // const CLSubmitBut = document.getElementById("CLSubmit") as HTMLElement;
@@ -245,7 +247,7 @@ const plotAirfoilFunction = (
   lwidth: number,
   colour: string,
     title: string = "Camber Slope"
-) => {
+):void => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const dx = chordLength / (pointCount - 1);
   ctx.beginPath();
@@ -353,6 +355,7 @@ const getUserMenuInput = () => {
   P = parseFloat(PMenu.value) / 10;
   AOA = (parseFloat(AOAMenu.value) * Math.PI) / 180;
   chordLength = parseFloat(ChordLengthMenu.value);
+  Uinfty = parseFloat(UinftyMenu.value);
   xOffset = canvas.width / 2 - (chordLength * DRAW_SCALE_FACTOR) / 2;
   yOffset = canvas.height / 2 + (M * chordLength * DRAW_SCALE_FACTOR) / 2;
 };
@@ -467,7 +470,6 @@ cacheAirfoilCirculation();
 plotVectorField()
 // circulationSubmitButTask()
 calculationTasks()
-
 }
 
 

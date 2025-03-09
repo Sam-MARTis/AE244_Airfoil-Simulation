@@ -16,9 +16,11 @@
             <label for="P">Position of Max camber in tenths of chord</label>
             <input id="P" name="P" placeholder="3" value="3"></input><br>
             <label for="ChordLength">Chord Length</label>
-            <input id="ChordLength" name="ChordLength" placeholder="5" value="5"></input><br>
+            <input id="ChordLength" name="ChordLength" placeholder="1" value="1"></input><br>
             <label for="AOA">Angle of attack in degrees</label>
             <input id="AOA" name="AOA" placeholder="5" value="5"></input><br>
+            <label for="Uinfty">Free stream velocity </label>
+            <input id="Uinfty" name="Uinfty" placeholder="20" value="20"></input><br>
 
       
             <button id="Submit" type="submit">Submit</button>
@@ -28,7 +30,7 @@
             <select id="plotOptions">
                 <option value="camberLine">Camber line</option>
                 <option value="camberSlope">Camber slope</option>
-                <option value="camberVorticity">Vorticity of Camberline </option>
+                <!-- <option value="camberVorticity">Vorticity of Camberline </option> -->
 
             </select>
         </label>
