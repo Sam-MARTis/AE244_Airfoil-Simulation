@@ -143,7 +143,7 @@ const integrate = (
   return result;
 };
 
-const getAn = (n: number) => {
+const getAn = (n: number, aoa: number = AOA) => {
   if (n < 0) {
     throw Error("Cannot find An for negative n");
   }
@@ -151,7 +151,7 @@ const getAn = (n: number) => {
     return camberSlope(mapThetaToX(theta)) * Math.cos(n * theta);
   };
   if (n == 0) {
-    return AOA - (1 / Math.PI) * integrate(integrand, 0, Math.PI);
+    return aoa - (1 / Math.PI) * integrate(integrand, 0, Math.PI);
   }
   return (2 / Math.PI) * integrate(integrand, 0, Math.PI);
 };
@@ -159,7 +159,7 @@ const getAn = (n: number) => {
 const cacheAn = (count: number) => {
   AnCache = [];
   for (let i = 0; i < count; i++) {
-    AnCache.push(getAn(i));
+    AnCache.push(getAn(i, AOA));
   }
 };
 
@@ -516,7 +516,7 @@ submitBut.addEventListener("click", (e: Event) => {
   e.preventDefault();
   console.log("Submitted");
   performPlotOperation(pointCount);
-  console.log(getAn(0));
+  console.log(getAn(0, AOA));
   setup()
 
 //   circulationSubmitButTask()
@@ -532,11 +532,17 @@ plotOptionMenu.addEventListener("change", () => {
 }
 );
 
-document.addEventListener("click", (e: MouseEvent) => {
-  cacheAn(15);
-  console.log(AnCache[0]);
-  // console.log(airfoilCirculationCache);
-  console.log(getVelocityAtPoint(...mapSpaceToCanvas(e.layerX, e.layerY)))
+canvas.addEventListener("click", (e: MouseEvent) => {
+  
+    // e.preventDefault();
+    // const [xVal, yVal] = mapCanvasToSpace(e.layerX, e.layerY)
+    // const [vX, vY] = getVelocityAtPoint(xVal, yVal)
+    // ctx.beginPath()
+    // ctx.strokeStyle = "red"
+    // ctx.moveTo(e.x, e.y)
+    // ctx.lineTo(e.layerX + vX*10, e.layerY - vY*10)
+    // ctx.stroke()
+  
 });
 document.addEventListener("mousemove", (e:MouseEvent) => {
   const [i,j] =  mapCanvasToSpace(e.layerX, e.layerY)
